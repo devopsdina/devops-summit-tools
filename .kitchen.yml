@@ -1,0 +1,44 @@
+---
+driver:
+  name: azurerm
+  subscription_id: insert-subid-here
+  location: 'EastUS2'
+  machine_size: 'Standard_D2_V2'
+
+transport:
+  name: winrm
+  elevated: true
+
+verifier:
+  name: inspec
+
+provisioner:
+  name: chef_zero
+  deprecations_as_errors: true
+  retry_on_exit_code:
+    - 20
+    - 35
+  max_retries: 10
+  wait_for_retry: 180
+  client_rb:
+    exit_status: :enabled
+
+platforms:
+  - name: Windows-10
+    driver:
+      image_urn: "MicrosoftWindowsDesktop:Windows-10:rs4-pro:latest"
+      #vnet_id: "<if you need to use an internal VNET put the resource ID here"
+      #subnet_id: "<if you are using a Vnet put the subnet name here, just the name>"
+      use_managed_disk: true
+      vm_tags:
+        test-kitchen: true
+      # below is required for windows 10 test kitchen see: https://github.com/test-kitchen/kitchen-azurerm/issues/89
+      winrm_powershell_script: |-
+                               Enable-PSRemoting -SkipNetworkProfileCheck -Force
+                               New-NetFirewallRule -DisplayName "Windows Remote Management (HTTP-In)" -Name "Windows Remote Management (HTTP-In)" -Profile Any -LocalPort 5985 -Protocol TCP
+
+suites:
+  - name: default
+    run_list:
+      - recipe[tools::default]
+    attributes:
